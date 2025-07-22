@@ -11,7 +11,7 @@ import java.util.Set;
 @Setter
 public class UserDTO {
     private String id;
-    private String login;
+    private String username;
     private String enctyptedPassword;
     private String email;
     private Set<Role> roles = new HashSet<>();

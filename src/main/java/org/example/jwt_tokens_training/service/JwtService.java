@@ -3,23 +3,37 @@ package org.example.jwt_tokens_training.service;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import lombok.Value;
+import jakarta.annotation.Resource;
+import org.example.jwt_tokens_training.dto.UserLoginDTO;
 import org.example.jwt_tokens_training.model.User;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Date;
 
+@Service
 public class JwtService {
-    @Value("${jwt.secret}")
     private final String jwtSecret;
-
-    @Value("${jwt.expiration}")
     private final long jwtExpiration;
 
-    public String generateToken(User user){
+    public JwtService(
+            @Value("classpath:${jwt.secret}") Resource secretResource,
+            @Value("${jwt.expiration}") long jwtExpiration
+    ) throws IOException {
+        this.jwtSecret = new String(secretResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+        this.jwtExpiration = jwtExpiration;
+    }
+
+    public String generateToken(UserLoginDTO user){
         return Jwts.builder()
-                .setSubject(user.getLogin())
-                .claim("roles", user.getRoles())
+                .setSubject(user.getUsername())
+//                .claim("roles", user.getRoles())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256)

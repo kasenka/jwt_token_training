@@ -2,6 +2,7 @@ package org.example.jwt_tokens_training.security;
 
 
 import org.example.jwt_tokens_training.model.User;
+import org.example.jwt_tokens_training.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -23,7 +24,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 });
 
         return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getLogin())
+                .username(user.getUsername())
                 .password(user.getEncryptedPassword())
 //                .roles(user.getRoles())
                 .build();

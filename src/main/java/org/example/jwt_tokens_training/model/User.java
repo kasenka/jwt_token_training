@@ -24,7 +24,7 @@ public class User {
 
     @NotBlank(message = "логин не может быть пустым")
     @Column(unique = true)
-    private String login;
+    private String username;
 
     @NotBlank(message = "пароль не может быть пустым")
     private String encryptedPassword;
