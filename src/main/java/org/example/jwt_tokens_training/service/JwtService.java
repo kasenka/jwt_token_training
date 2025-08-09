@@ -20,22 +20,29 @@ import java.util.Date;
 @Service
 public class JwtService {
     private final String jwtSecret;
-    private final long jwtExpiration;
+    public final long jwtExpirationAccess = 5 * 60 * 1000;
+    public final long jwtExpirationRefresh = 30 * 60 * 1000;
 
     public JwtService(
-            @Value("classpath:${jwt.secret}") Resource secretResource,
-            @Value("${jwt.expiration}") long jwtExpiration
+            @Value("classpath:${jwt.secret}") Resource secretResource
     ) throws IOException {
         this.jwtSecret = new String(secretResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
-        this.jwtExpiration = jwtExpiration;
     }
 
-    public String generateToken(UserLoginDTO user){
+    public String generateAccessToken(UserLoginDTO user){
         return Jwts.builder()
                 .setSubject(user.getUsername())
-//                .claim("roles", user.getRoles())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationAccess))
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String generateRefreshToken(UserLoginDTO user){
+        return Jwts.builder()
+                .setSubject(user.getUsername())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationRefresh))
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256)
                 .compact();
     }

@@ -1,4 +1,3 @@
 jwt:
   secret: jwt.secret
-  expiration: 900000
 

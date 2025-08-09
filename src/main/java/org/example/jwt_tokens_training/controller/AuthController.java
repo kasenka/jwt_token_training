@@ -8,6 +8,7 @@ import org.example.jwt_tokens_training.model.Role;
 import org.example.jwt_tokens_training.model.User;
 import org.example.jwt_tokens_training.repository.UserRepository;
 import org.example.jwt_tokens_training.service.JwtService;
+import org.example.jwt_tokens_training.service.RefreshTokenService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -33,18 +34,21 @@ public class AuthController {
     private JwtService jwtService;
     private UserMapper userMapper;
     private PasswordEncoder passwordEncoder;
+    private RefreshTokenService refreshTokenService;
 
 
     public AuthController(UserRepository userRepository,
                           AuthenticationManager authenticationManager,
                           JwtService jwtService,
                           UserMapper userMapper,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @PostMapping(value = "/register", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -90,15 +94,17 @@ public class AuthController {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            String jwt = jwtService.generateToken(userLoginDTO);
+            String jwtAccess = jwtService.generateAccessToken(userLoginDTO);
+            String jwtRefresh = jwtService.generateRefreshToken(userLoginDTO);
 
             User user = userRepository.findByUsername(userLoginDTO.getUsername()).get();
-
+            refreshTokenService.saveRefreshToken(jwtRefresh, user.getUsername(), jwtService.jwtExpirationRefresh);
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of(
                             "user", userMapper.map(user),
-                            "jwt", jwt,
+                            "jwtAccess", jwtAccess,
+                            "jwtRefresh", jwtRefresh,
                             "role", user.getRoles(),
                             "aut", authentication));
         } catch (BadCredentialsException ex) {
