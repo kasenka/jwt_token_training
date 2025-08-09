@@ -12,7 +12,7 @@ import java.util.Set;
 public class UserDTO {
     private String id;
     private String username;
-    private String enctyptedPassword;
+    private String encryptedPassword;
     private String email;
     private Set<Role> roles = new HashSet<>();
 }

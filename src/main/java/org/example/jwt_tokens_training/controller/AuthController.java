@@ -60,6 +60,11 @@ public class AuthController {
                     .body(Map.of("error", "Этот юзернейм уже занят"));
         }
 
+        if(userRepository.findByEmail(userRegisterDTO.getEmail()).isPresent()){
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Этот email уже занят"));
+        }
+
         User user = userMapper.map(userRegisterDTO);
 
         user.setEncryptedPassword(passwordEncoder.encode(userRegisterDTO.getPassword()));
