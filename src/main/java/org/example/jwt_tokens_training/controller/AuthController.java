@@ -6,6 +6,7 @@ import org.example.jwt_tokens_training.dto.UserMapper;
 import org.example.jwt_tokens_training.dto.UserRegisterDTO;
 import org.example.jwt_tokens_training.model.Role;
 import org.example.jwt_tokens_training.model.User;
+import org.example.jwt_tokens_training.repository.RefreshTokenRepository;
 import org.example.jwt_tokens_training.repository.UserRepository;
 import org.example.jwt_tokens_training.service.JwtService;
 import org.example.jwt_tokens_training.service.RefreshTokenService;
@@ -22,6 +23,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Time;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,6 +32,7 @@ import java.util.Set;
 @RequestMapping("/api")
 public class AuthController {
 
+    private final RefreshTokenRepository refreshTokenRepository;
     private UserRepository userRepository;
     private AuthenticationManager authenticationManager;
     private JwtService jwtService;
@@ -42,13 +46,14 @@ public class AuthController {
                           JwtService jwtService,
                           UserMapper userMapper,
                           PasswordEncoder passwordEncoder,
-                          RefreshTokenService refreshTokenService) {
+                          RefreshTokenService refreshTokenService, RefreshTokenRepository refreshTokenRepository) {
         this.userRepository = userRepository;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.refreshTokenService = refreshTokenService;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @PostMapping(value = "/register", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -94,11 +99,12 @@ public class AuthController {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            String jwtAccess = jwtService.generateAccessToken(userLoginDTO);
-            String jwtRefresh = jwtService.generateRefreshToken(userLoginDTO);
+            String jwtAccess = jwtService.generateAccessToken(userLoginDTO.getUsername());
+            String jwtRefresh = jwtService.generateRefreshToken(userLoginDTO.getUsername());
 
             User user = userRepository.findByUsername(userLoginDTO.getUsername()).get();
-            refreshTokenService.saveRefreshToken(jwtRefresh, user.getUsername(), jwtService.jwtExpirationRefresh);
+            refreshTokenService.saveRefreshToken(jwtRefresh, user.getUsername(),
+                    LocalDateTime.now().plusSeconds(jwtService.jwtExpirationRefresh));
 
             return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of(
@@ -111,5 +117,29 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Неверный юзернейм или пароль"));
         }
+    }
+
+    @PostMapping(value = "/refresh", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> refresh(@RequestParam String refreshToken){
+        if (refreshTokenService.isValid(refreshToken)){
+            String username = refreshTokenService.getUsernameByToken(refreshToken);
+
+            String accessToken = jwtService.generateAccessToken(username);
+            return ResponseEntity.ok()
+                .body(Map.of("jwtAccess", accessToken));
+        }return ResponseEntity.status(401)
+                .body(Map.of("error", "Невалидный refreshToken"));
+    }
+
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestParam String refreshToken) {
+        refreshTokenService.deleteRefreshToken(refreshToken);
+        return ResponseEntity.ok("Logged out");
+    }
+
+    @GetMapping(value = "/protected", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getProtected(){
+        return ResponseEntity.ok(Map.of("protectedResource", "Вы получили доступ"));
     }
 }
