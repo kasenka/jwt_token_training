@@ -111,7 +111,7 @@ public class AuthController {
                             "user", userMapper.map(user),
                             "jwtAccess", jwtAccess,
                             "jwtRefresh", jwtRefresh,
-                            "role", user.getRoles(),
+                            "roles", user.getRoles(),
                             "aut", authentication));
         } catch (BadCredentialsException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -127,12 +127,12 @@ public class AuthController {
             String accessToken = jwtService.generateAccessToken(username);
             return ResponseEntity.ok()
                 .body(Map.of("jwtAccess", accessToken));
-        }return ResponseEntity.status(401)
+        }return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("error", "Невалидный refreshToken"));
     }
 
 
-    @PostMapping("/logout")
+    @DeleteMapping("/logout")
     public ResponseEntity<?> logout(@RequestParam String refreshToken) {
         refreshTokenService.deleteRefreshToken(refreshToken);
         return ResponseEntity.ok("Logged out");
