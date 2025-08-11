@@ -12,11 +12,11 @@ import lombok.Setter;
 
 @AllArgsConstructor
 public class UserLoginDTO {
-    @NotBlank(message = "логин не может быть пустым")
+    @NotBlank(message = "Логин не может быть пустым")
     @Column(unique = true)
     private String username;
 
-    @NotBlank(message = "пароль не может быть пустым")
+    @NotBlank(message = "Пароль не может быть пустым")
     private String password;
 
 }
